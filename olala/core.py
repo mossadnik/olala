@@ -33,7 +33,7 @@ def getLabelBoxes(ax, labels):
     return x, w
 
 
-def placeLabels(ax, labels, x, w=None, arrows=None, connectionPosition='bl'):
+def placeLabels(ax, labels, x, x0, w=None, arrows=None, connectionPosition='bl'):
     '''
     place labels in position x (axis coordinates). Origins of
     optional arrows are placed at connectionPosition of each label bbox
@@ -43,7 +43,12 @@ def placeLabels(ax, labels, x, w=None, arrows=None, connectionPosition='bl'):
     for i in range(len(labels)):
         label = labels[i]
         xy = x[i]
-        pos = invTransData.transform(transAxes.transform(xy))
+        xy0 = x0[i]
+        pos = (
+            np.array(label.get_position()) +
+            invTransData.transform(transAxes.transform(xy)) -
+            invTransData.transform(transAxes.transform(xy0))
+               )
         label.set_position(pos)
         if arrows:
             dxy = connectionPositionOffset(connectionPosition, w[i])
@@ -78,7 +83,7 @@ def applyLayout(ax, labels, pad=.01,
         return scale * x + offset, scale * w
 
     pad = checkVec2d(pad)
-    x0, w = toStandardBounds(*getLabelBoxes(ax, labels), xlim=xlim, ylim=ylim)
-    x, w = fromStandardBounds(layoutFunc(x0, w + pad, **layoutArgs),
-                              w, xlim, ylim)
-    placeLabels(ax, labels, x, w, arrows, connectionPosition)
+    x0, w0 = toStandardBounds(*getLabelBoxes(ax, labels), xlim=xlim, ylim=ylim)
+    x, w = fromStandardBounds(layoutFunc(x0, w0 + pad, **layoutArgs),
+                              w0, xlim, ylim)
+    placeLabels(ax, labels, x, fromStandardBounds(x0, w0, xlim, ylim)[0], w, arrows, connectionPosition)
